@@ -1,31 +1,23 @@
 using System;
 using System.Linq;
-using BlogsConsole.Controller;
 
 namespace BlogsConsole.View
 {
     public class Display
     {
         private static BloggingContext _context;
-        private static BloggingController _controller;
         private static NLog.Logger _logger;
-        
-        public Blog Blog { get; set; }
-        public Post Post { get; set; }
-        
+
         private string _input;
         
         private const string AllBlog = "ALLBLOGS";
         private const string AllPost = "ALLPOSTS";
         private const string AllPostsFromBlog = "ALLPOSTSFROMBLOG";
         
-        public Display(BloggingContext context, BloggingController controller, NLog.Logger logger)
+        public Display(BloggingContext context, NLog.Logger logger)
         {
             _context = context;
-            _controller = controller;
             _logger = logger;
-            Blog = new Blog();
-            Post = new Post();
 
             do
             {
@@ -33,7 +25,7 @@ namespace BlogsConsole.View
                 
                 _input = Console.ReadLine();
 
-                if (string.IsNullOrWhiteSpace(_input) || !new string[] {"1","2","3","4"}.Contains(_input))
+                if (string.IsNullOrWhiteSpace(_input) || !new[] {"1","2","3","4"}.Contains(_input))
                 {
                     _logger.Info("Invalid Selection");
                     continue;
@@ -85,9 +77,12 @@ namespace BlogsConsole.View
 
             if (!string.IsNullOrWhiteSpace(_input))
             {
-                Blog.Name = _input;
-                _controller.AddBlog(Blog);
-                _logger.Info($"Blog added - '{Blog.Name}'");
+                Blog blog = new Blog
+                {
+                    Name = _input
+                };
+                _context.AddBlog(blog);
+                _logger.Info($"Blog added - '{blog.Name}'");
             }
             else
             {
@@ -117,20 +112,20 @@ namespace BlogsConsole.View
                         
                         if (!string.IsNullOrWhiteSpace(_input))
                         {
-                            Post.Title = _input;
-                            
+                            Post post = new Post
+                            {
+                                Title = _input
+                            };
+
                             Console.WriteLine("Enter the Post content"); 
                             _input = Console.ReadLine();
 
-                            Post.Content = _input;
-                            Post.BlogId = blogId;
+                            post.Content = _input;
+                            post.BlogId = blogId;
                             
-                            Blog blog = _context.Blogs.First(blog => blog.BlogId == blogId);
-                            Post.Blog = blog;
+                            _context.AddPostToBlog(blogId, post);
                             
-                            _controller.AddPostToBlog(blogId, Post);
-                            
-                            _logger.Info($"Post added - '{Post.Title}'");
+                            _logger.Info($"Post added - '{post.Title}'");
                             Console.WriteLine();
                         }
                         else
@@ -241,7 +236,7 @@ namespace BlogsConsole.View
                 {
                     foreach (var blog in _context.Blogs)
                     {
-                        Console.WriteLine($"{blog.BlogId}) Post from '{blog.Name}'");;
+                        Console.WriteLine($"{blog.BlogId}) Post from '{blog.Name}'");
                     }
 
                     break;
